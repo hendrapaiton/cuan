@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model allowance {
+  id      Int              @id @default(autoincrement())
+  tanggal DateTime         @db.DateTime(0)
+  status  allowance_status
+  harga   Decimal?         @db.Decimal(10, 0)
+  jumlah  Int?
+  item_id Int
+  item    item             @relation(fields: [item_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "allowance_item")
+
+  @@index([item_id], map: "allowance_item_idx")
+}
+
+model item {
+  id          Int           @id @default(autoincrement())
+  kode        String        @unique(map: "kode_UNIQUE") @db.VarChar(45)
+  nama        String        @db.VarChar(255)
+  jenis       item_jenis
+  allowance   allowance[]
+  order       order[]
+  stock       stock[]
+  transaction transaction[]
+}
+
+model order {
+  id          Int      @id @default(autoincrement())
+  item_id     Int
+  purchase_id Int
+  harga       Decimal? @default(0) @db.Decimal(10, 0)
+  jumlah      Int?     @default(0)
+  item        item     @relation(fields: [item_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "order_item")
+  purchase    purchase @relation(fields: [purchase_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "order_purchase")
+
+  @@index([item_id], map: "order_item_idx")
+  @@index([purchase_id], map: "order_purchase_idx")
+}
+
+model purchase {
+  id        Int      @id @default(autoincrement())
+  tanggal   DateTime @db.DateTime(0)
+  referensi String   @db.VarChar(15)
+  order     order[]
+}
+
+model sales {
+  id          Int           @id @default(autoincrement())
+  tanggal     DateTime      @db.DateTime(0)
+  referensi   String        @db.VarChar(15)
+  transaction transaction[]
+}
+
+model stock {
+  id      Int      @id @default(autoincrement())
+  jumlah  Int?     @default(0)
+  harga   Decimal? @default(0) @db.Decimal(10, 0)
+  item_id Int
+  item    item     @relation(fields: [item_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "stock_item")
+
+  @@index([item_id], map: "stock_item_idx")
+}
+
+model transaction {
+  id       Int      @id @default(autoincrement())
+  item_id  Int
+  sales_id Int
+  harga    Decimal? @default(0) @db.Decimal(10, 0)
+  jumlah   Int?     @default(0)
+  item     item     @relation(fields: [item_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "transaction_item")
+  sales    sales    @relation(fields: [sales_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "transaction_sales")
+
+  @@index([item_id], map: "transaction_item_idx")
+  @@index([sales_id], map: "transaction_sales_idx")
+}
+
+enum allowance_status {
+  harga
+  jumlah
+}
+
+enum item_jenis {
+  kucing
+  anjing
+  ayam
+  ikan
+  kelinci
+  hamster
+  kambing
+  sapi
+  babi
+}
